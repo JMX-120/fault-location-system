@@ -7,18 +7,12 @@ import matplotlib.font_manager as fm
 import os
 
 # --- 字体兼容性修复 ---
-# 指定你上传到 Github 的字体文件名称
 font_path = 'simhei.ttf'
-
 if os.path.exists(font_path):
-    # 加载自定义字体文件
     font_prop = fm.FontProperties(fname=font_path)
-    # 设置全局字体
     plt.rcParams['font.sans-serif'] = [font_prop.get_name()]
 else:
-    # 本地环境回退方案
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'sans-serif']
-
 plt.rcParams['axes.unicode_minus'] = False 
 
 # --- 导入算法逻辑 ---
@@ -39,7 +33,6 @@ class HighFidelityFaultGenerator:
         self.wave_speed = wave_speed
 
     def generate_full_data(self, t0, distance):
-        """生成模拟故障数据"""
         f0 = 50.0
         w = 2 * np.pi * f0
         ua = 10.0 * np.sin(w * self.t)
@@ -70,34 +63,40 @@ with st.sidebar:
     run_btn = st.button("执行融合定位分析", type="primary")
 
 if run_btn:
+    # 1. 信号生成
     gen = HighFidelityFaultGenerator(wave_speed=set_wave_speed)
     t, ua, ia, vib = gen.generate_full_data(sim_t0, sim_distance)
 
+    # 2. 算法处理
     try:
+        # 电信号识别
+        t_elec_fault = t[np.argmax(np.abs(np.diff(ia)))][cite: 5]
+        
+        # 振动信号识别
         processor = VibrationProcessor(model_path="intensive_fault_study.pth")
         imf2 = processor.apply_vmd(vib)
         prob_curve = processor.predict_probability(imf2)
-        t_warning, t_confirm = processor.locate_toa(prob_curve, t)
+        _, t_confirm = processor.locate_toa(prob_curve, t)
     except Exception as e:
         st.error(f"算法处理出错: {e}")
         st.stop()
 
+    # 3. 结果看板展示
     if t_confirm:
-        calc_dist = abs(t_confirm - t_elec_fault) * set_wave_speed # 此处修正，确保计算逻辑
+        calc_dist = abs(t_confirm - t_elec_fault) * set_wave_speed[cite: 5]
         error = abs(calc_dist - sim_distance)
+        
         col1, col2, col3, col4 = st.columns(4)
-        t_elec_fault = t[np.argmax(np.abs(np.diff(ia)))] # 定义电突变时刻
-        col1.metric("电信号时刻", f"{t_elec_fault:.4f} s")
-        col2.metric("振动到达时刻", f"{t_confirm:.4f} s")
-        col3.metric("预测距离", f"{calc_dist:.2f} m")
-        col4.metric("定位误差", f"{error:.2f} m", delta=f"{error:.2f}", delta_color="inverse")
+        col1.metric("电信号时刻", f"{t_elec_fault:.4f} 秒")
+        col2.metric("振动到达时刻", f"{t_confirm:.4f} 秒")
+        col3.metric("预测距离", f"{calc_dist:.2f} 米")
+        col4.metric("定位误差", f"{error:.2f} 米", delta=f"{error:.2f}", delta_color="inverse")
 
+    # 4. 图表绘制
     st.subheader("信号融合全景观测看板")
     fig, axes = plt.subplots(5, 1, figsize=(12, fig_height))
     plt.subplots_adjust(hspace=0.6)
     zoom_win = (t_elec_fault - 0.01, t_elec_fault + 0.04)
-
-    # 绘图时统一应用字体属性
     fp = font_prop if os.path.exists(font_path) else None
 
     # (1) 电压
@@ -121,7 +120,7 @@ if run_btn:
     axes[2].set_ylabel("幅值 (g)", fontproperties=fp)
     axes[2].grid(True, alpha=0.3)
 
-    # (4) VMD
+    # (4) VMD分量
     axes[3].plot(t, imf2, color='royalblue')
     axes[3].set_title("4. VMD-IMF2 高频特征分量", fontproperties=fp, fontweight='bold')
     axes[3].set_ylabel("幅值", fontproperties=fp)
