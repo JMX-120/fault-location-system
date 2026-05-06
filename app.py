@@ -70,7 +70,7 @@ if run_btn:
     # 2. 算法处理
     try:
         # 电信号识别
-        t_elec_fault = t[np.argmax(np.abs(np.diff(ia)))][cite: 5]
+        t_elec_fault = t[np.argmax(np.abs(np.diff(ia)))]
         
         # 振动信号识别
         processor = VibrationProcessor(model_path="intensive_fault_study.pth")
@@ -83,7 +83,7 @@ if run_btn:
 
     # 3. 结果看板展示
     if t_confirm:
-        calc_dist = abs(t_confirm - t_elec_fault) * set_wave_speed[cite: 5]
+        calc_dist = abs(t_confirm - t_elec_fault) * set_wave_speed
         error = abs(calc_dist - sim_distance)
         
         col1, col2, col3, col4 = st.columns(4)
