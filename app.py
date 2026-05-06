@@ -106,7 +106,7 @@ if run_btn:
         col3.metric("预测距离", f"{calc_dist:.2f} 米")
         col4.metric("定位误差", f"{error:.2f} 米", delta=f"{error:.2f}", delta_color="inverse")
 
-    st.subheader("信号融合全景观测看板 (三相增强版)")
+    st.subheader("信号融合全景观测看板")
     fig, axes = plt.subplots(5, 1, figsize=(12, fig_height))
     plt.subplots_adjust(hspace=0.6)
     zoom_win = (t_elec_fault - 0.02, t_elec_fault + 0.06)
